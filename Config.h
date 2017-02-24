@@ -22,7 +22,8 @@
 // Select one board:
 // #define PI_HAT_7021_REV_02
 // #define PI_HAT_7021_REV_03
-#define ADF7021_CARRIER_BOARD
+// #define ADF7021_CARRIER_BOARD
+#define DL3AGB_ADF7021
 
 // Enable ADF7021 support:
 #define ENABLE_ADF7021
@@ -32,9 +33,9 @@
 
 // TCXO of the ADF7021:
 // For 14.7456 MHz:
-#define ADF7021_14_7456
+// #define ADF7021_14_7456
 // For 12.2880 MHz:
-// #define ADF7021_12_2880
+#define ADF7021_12_2880
 // Original 19.68 MHz, not working, only for experimentation:
 // #define ADF7021_19_6800
 

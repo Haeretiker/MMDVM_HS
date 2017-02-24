@@ -138,6 +138,59 @@
 #define PIN_COS_LED          GPIO_Pin_15
 #define PORT_COS_LED         GPIOB
 
+#elif defined(DL3AGB_ADF7021)
+
+#define PIN_SCLK             GPIO_Pin_5
+#define PORT_SCLK            GPIOA
+
+#define PIN_SREAD            GPIO_Pin_6
+#define PORT_SREAD           GPIOA
+
+#define PIN_SDATA            GPIO_Pin_7
+#define PORT_SDATA           GPIOA
+
+#define PIN_SLE              GPIO_Pin_4
+#define PORT_SLE             GPIOA
+
+#define PIN_CE               GPIO_Pin_1
+#define PORT_CE              GPIOB
+
+#define PIN_RXD              GPIO_Pin_14
+#define PORT_RXD             GPIOB
+
+// TXD is TxRxCLK of ADF7021, standard TX/RX data interface
+#define PIN_TXD              GPIO_Pin_13
+#define PORT_TXD             GPIOB
+#define PIN_TXD_INT          GPIO_PinSource13
+#define PORT_TXD_INT         GPIO_PortSourceGPIOB
+#define EXTI_TXD	     EXTI_Line13
+
+#define PIN_LED              GPIO_Pin_3
+#define PORT_LED             GPIOB
+
+#define PIN_DEB              GPIO_Pin_4
+#define PORT_DEB             GPIOB
+
+#define PIN_DSTAR_LED        GPIO_Pin_5
+#define PORT_DSTAR_LED       GPIOB
+
+#define PIN_DMR_LED          GPIO_Pin_6
+#define PORT_DMR_LED         GPIOB
+
+#define PIN_YSF_LED          GPIO_Pin_7
+#define PORT_YSF_LED         GPIOB
+
+#define PIN_P25_LED          GPIO_Pin_8
+#define PORT_P25_LED         GPIOB
+
+#define PIN_PTT_LED          GPIO_Pin_13
+#define PORT_PTT_LED         GPIOC
+
+#define PIN_COS_LED          GPIO_Pin_9
+#define PORT_COS_LED         GPIOB
+
+#define BIDIR_DATA_PIN
+
 #else
 #error "Either PI_HAT_7021_REV_02, PI_HAT_7021_REV_03, or ADF7021_CARRIER_BOARD need to be defined"
 #endif
@@ -178,7 +231,13 @@ extern "C" {
     }
   }
 #endif
-
+#elif defined(DL3AGB_ADF7021)
+  void EXTI15_10_IRQHandler(void) {
+    if(EXTI_GetITStatus(EXTI_TXD)!=RESET) {
+      io.interrupt();
+    EXTI_ClearITPendingBit(EXTI_TXD);
+    }
+  }
 #endif
 }
 
@@ -222,7 +281,7 @@ void CIO::Init()
   
 #if defined(PI_HAT_7021_REV_02)
   GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
-#elif defined(PI_HAT_7021_REV_03) || defined(ADF7021_CARRIER_BOARD)
+#elif defined(PI_HAT_7021_REV_03) || defined(ADF7021_CARRIER_BOARD) || defined(DL3AGB_ADF7021)
   GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 #endif
 
@@ -380,6 +439,9 @@ void CIO::Init()
   EXTI_InitStructure.EXTI_Line = EXTI_Line15;
 #endif
 
+#elif defined (DL3AGB_ADF7021)
+  GPIO_EXTILineConfig(PORT_TXD_INT, PIN_TXD_INT);
+  EXTI_InitStructure.EXTI_Line = EXTI_TXD;
 #endif
 
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -406,6 +468,8 @@ void CIO::startInt()
   NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
 #endif
 
+#elif defined(DL3AGB_ADF7021)
+  NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
 #endif
 
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 15;
