@@ -37,7 +37,7 @@ or
 USB VCOM
 
 - Serial repeater
-USART2 - TXD PA2  - RXD PA3 
+USART2 - TXD PA2  - RXD PA3
 
 */
 
@@ -184,7 +184,7 @@ void InitUSART1(int speed)
   GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_9;       //  Tx
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
+
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN_FLOATING;
   GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_10;       //  Rx
   GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -200,7 +200,7 @@ void InitUSART1(int speed)
   USART_Init(USART1, &USART_InitStructure);
 
   USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-  
+
   USART_Cmd(USART1, ENABLE);
 
   // initialize the fifos
@@ -231,7 +231,7 @@ void WriteUSART1(const uint8_t* data, uint16_t length)
 {
   for (uint16_t i = 0U; i < length; i++)
     TXSerialfifoput1(data[i]);
-    
+
   USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
 }
 
@@ -318,7 +318,7 @@ void USART2_IRQHandler()
 {
   uint8_t c;
   io.DEB_pin(HIGH);
-  
+
   if (USART_GetITStatus(USART2, USART_IT_RXNE)) {
     c = (uint8_t) USART_ReceiveData(USART2);
 
@@ -357,12 +357,12 @@ void USART2_IRQHandler()
 
 void InitUSART2(int speed)
 {
-  
+
   // USART2 - TXD PA2  - RXD PA3
   GPIO_InitTypeDef GPIO_InitStructure;
   USART_InitTypeDef USART_InitStructure;
   NVIC_InitTypeDef NVIC_InitStructure;
-  
+
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
@@ -379,7 +379,7 @@ void InitUSART2(int speed)
   GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_2;       //  Tx
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
-  
+
   GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN_FLOATING;
   GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3;       //  Rx
   GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -426,7 +426,7 @@ void WriteUSART2(const uint8_t* data, uint16_t length)
 {
   for (uint16_t i = 0U; i < length; i++)
     TXSerialfifoput2(data[i]);
-    
+
   USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
 }
 
@@ -438,7 +438,10 @@ void CSerialPort::beginInt(uint8_t n, int speed)
 {
   switch (n) {
     case 1U:
-    #if defined(STM32_USART1_HOST)
+    #if defined(STM32_USART1_HOST) && defined(STM32_USB_HOST)
+      usbserial.begin();
+      InitUSART1(speed);
+    #elif defined(STM32_USART1_HOST)
       InitUSART1(speed);
     #elif defined(STM32_USB_HOST)
       usbserial.begin();
@@ -451,20 +454,29 @@ void CSerialPort::beginInt(uint8_t n, int speed)
     #endif
     default:
       break;
-  }   
+  }
 }
 
 int CSerialPort::availableInt(uint8_t n)
-{ 
+{
   switch (n) {
     case 1U:
-    #if defined(STM32_USART1_HOST)
+    #if defined(STM32_USART1_HOST) && defined(STM32_USB_HOST)
+      if (usbserial.isConnected())
+      {
+          return usbserial.available();
+      }
+      else
+      {
+          return AvailUSART1();
+      }
+    #elif defined(STM32_USART1_HOST)
       return AvailUSART1();
     #elif defined(STM32_USB_HOST)
       return usbserial.available();
     #endif
     #if defined(SERIAL_REPEATER)
-    case 3U: 
+    case 3U:
       return AvailUSART2();
     #endif
     default:
@@ -473,10 +485,19 @@ int CSerialPort::availableInt(uint8_t n)
 }
 
 uint8_t CSerialPort::readInt(uint8_t n)
-{   
+{
   switch (n) {
     case 1U:
-    #if defined(STM32_USART1_HOST)
+    #if defined(STM32_USART1_HOST) && defined(STM32_USB_HOST)
+      if (usbserial.isConnected())
+      {
+        return usbserial.read();
+      }
+      else
+      {
+        return ReadUSART1();
+      }
+    #elif defined(STM32_USART1_HOST)
       return ReadUSART1();
     #elif defined(STM32_USB_HOST)
       return usbserial.read();
@@ -494,7 +515,20 @@ void CSerialPort::writeInt(uint8_t n, const uint8_t* data, uint16_t length, bool
 {
   switch (n) {
     case 1U:
-    #if defined(STM32_USART1_HOST)
+    #if defined(STM32_USART1_HOST) && defined(STM32_USB_HOST)
+      if (usbserial.isConnected())
+      {
+        usbserial.write(data, length);
+        if (flush)
+            usbserial.flush();
+      }
+      else
+      {
+        WriteUSART1(data, length);
+        if (flush)
+            TXSerialFlush1();
+      }
+    #elif defined(STM32_USART1_HOST)
       WriteUSART1(data, length);
     if (flush)
       TXSerialFlush1();

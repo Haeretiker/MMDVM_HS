@@ -40,7 +40,7 @@
 // #define ADF7021_19_6800
 
 // Host communication selection:
-// #define STM32_USART1_HOST
+#define STM32_USART1_HOST
 #define STM32_USB_HOST
 
 // Send RSSI value:
